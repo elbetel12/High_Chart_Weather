@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Data</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+     
+    <style>
+        body {
+            background-color: thistle;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #countryInput {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .input-group {
+  display: flex;
+  align-items: center;
+}
+
+#countryInput {
+  min-height: 50px;
+  max-width: 150px;
+  padding: 0 1rem;
+  color: black;
+  font-size: 15px;
+  border: 1px solid #5e4dcd;
+  border-radius: 6px 0 0 6px;
+  background-color: transparent;
+}
+
+button {
+  min-height: 50px;
+  padding: .5em 1em;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  background-color: #5e4dcd;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color .3s ease-in-out;
+}
+
+.button--submit:hover {
+  background-color: #5e5dcd;
+}
+
+.input:focus, .input:focus-visible {
+  border-color: #3898EC;
+  outline: none;
+}
+
+        .main {
+            display: flex;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        
+        .main > div {
+            flex-basis: 30%;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Data For Different Countries</h1>
+    <input type="text" id="countryInput" placeholder="Enter country name">
+    <button onclick="fetchWeatherData()">Search</button>
+<div class="main">
+    <div id="temperatureChart"></div>
+    <div id="humidityChart"></div>
+    <div id="weatherDescriptionChart"></div>
+</div>
+    <script>
+        function fetchWeatherData() {
+            const countryName = document.getElementById("countryInput").value;
+            const apiKey = "83c432e9428909741098643d5a4bc8d5";
+            fetch(`https://api.openweathermap.org/data/2.5/weather?q=${countryName}&appid=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process weather data and create Highcharts graphs
+                    processWeatherData(data);
+                })
+                .catch(error => console.log('Error fetching weather data:', error));
+        }
+
+        function processWeatherData(data) {
+            // Extract the required weather data from the API response
+            const temperature = data.main.temp;
+            const humidity = data.main.humidity;
+            const weatherDescriptions = data.weather.map(weather => weather.description);
+
+            // Create separate Highcharts graphs for each data point
+            Highcharts.chart('temperatureChart', {
+                chart: {
+                    type: 'arearange'
+                },
+                title: {
+                    text: 'Temperature',
+                },
+                xAxis: {
+                    categories: ['Temperature Range'],
+                },
+                yAxis: {
+                    title: {
+                        text: 'Temperature (°C)',
+                    }
+                },
+                series: [{
+                    name: 'Temperature Range',
+                    data: [[temperature - 5, temperature + 5]], // Displaying a range of +/- 5°C for demonstration purposes
+                    zIndex: 1,
+                    marker: {
+                        fillColor: 'white',
+                        lineWidth: 2,
+                        lineColor: Highcharts.getOptions().colors[0]
+                    }
+                }, {
+                    name: 'Average Temperature',
+                    data: [temperature],
+                    zIndex: 2,
+                    type: 'line'
+                }]
+            });
+
+            Highcharts.chart('humidityChart', {
+                title: {
+                    text: 'Humidity',
+                },
+                series: [{
+                    type: 'column',
+                    data: [humidity],
+                    name: 'Humidity (%)',
+                }],
+            });
+
+            // Count the occurrences of each unique weather description
+        const weatherDescriptionCounts = {};
+        weatherDescriptions.forEach(description => {
+            weatherDescriptionCounts[description] = (weatherDescriptionCounts[description] || 0) + 1;
+        });
+
+        // Prepare data for the pie chart
+        const weatherDescriptionsData = Object.entries(weatherDescriptionCounts).map(([name, count]) => ({ name, y: count }));
+
+        Highcharts.chart('weatherDescriptionChart', {
+            title: {
+                text: 'Weather Description',
+            },
+            series: [{
+                type: 'pie',
+                data: weatherDescriptionsData,
+            }],
+        });
+    }
+    </script>
+</body>
+</html>
